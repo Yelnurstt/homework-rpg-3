@@ -1,5 +1,6 @@
 package com.narxoz.rpg.battle;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -23,16 +24,62 @@ public final class BattleEngine {
     }
 
     public void reset() {
-        // TODO: reset any battle state if you add it
+        this.random = new Random(1L);
     }
 
     public EncounterResult runEncounter(List<Combatant> teamA, List<Combatant> teamB) {
-        // TODO: validate inputs and run round-based battle
-        // TODO: use random if you add critical hits or target selection
         EncounterResult result = new EncounterResult();
-        result.setWinner("TBD");
-        result.setRounds(0);
-        result.addLog("TODO: implement battle simulation");
+
+        if (teamA == null || teamB == null || teamA.isEmpty() || teamB.isEmpty()) {
+            result.setWinner("None (Invalid Teams)");
+            return result;
+        }
+
+        List<Combatant> a = new ArrayList<>(teamA);
+        List<Combatant> b = new ArrayList<>(teamB);
+        int rounds = 0;
+
+        result.addLog("Battle starts! Team A (" + a.size() + ") vs Team B (" + b.size() + ")");
+
+        while (!a.isEmpty() && !b.isEmpty()) {
+            rounds++;
+            result.addLog("--- Round " + rounds + " ---");
+
+            // Team A attacks Team B
+            performAttacks(a, b, result);
+            if (b.isEmpty()) break;
+
+            // Team B attacks Team A
+            performAttacks(b, a, result);
+        }
+
+        result.setRounds(rounds);
+        if (!a.isEmpty()) {
+            result.setWinner("Team A");
+        } else if (!b.isEmpty()) {
+            result.setWinner("Team B");
+        } else {
+            result.setWinner("Draw");
+        }
+
         return result;
+    }
+
+    private void performAttacks(List<Combatant> attackers, List<Combatant> defenders, EncounterResult result) {
+        for (Combatant attacker : attackers) {
+            if (defenders.isEmpty()) break;
+            if (!attacker.isAlive()) continue;
+
+            Combatant target = defenders.get(random.nextInt(defenders.size()));
+            int damage = attacker.getAttackPower();
+            target.takeDamage(damage);
+
+            result.addLog(attacker.getName() + " attacks " + target.getName() + " for " + damage + " damage.");
+
+            if (!target.isAlive()) {
+                result.addLog(target.getName() + " has been defeated!");
+                defenders.remove(target);
+            }
+        }
     }
 }
